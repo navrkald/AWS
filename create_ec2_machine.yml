@@ -1,0 +1,6 @@
+---
+- name: Create EC2 instances 
+  hosts: localhost
+  gather_facts: true
+  roles:
+    - create_ec2_machine
