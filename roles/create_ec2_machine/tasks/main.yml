@@ -16,11 +16,13 @@
           volume_size: 10
           delete_on_termination: true
           volume_type: gp2
+          encrypted: true
         # For creation
         - device_name: /dev/sdb
           volume_size: 5
           delete_on_termination: true
           volume_type: gp2
+          encripted: true
         instance_tags:
           Name: "{{ tag_name }}"
           Owner: "{{ ec2_owner }}"
@@ -37,21 +39,7 @@
           CostCenter: "{{ tag_costcenter }}"
           Product: "{{ tag_product }}"
   register: ec2
-
-#- debug:
-#        var: ec2
-
-#- debug:
-#        var: ec2.instance_ids
-
-# TODO check for null
-
-#- name: Add new instance to host group
-#  add_host:
-#        hostname: "{{ item.private_ip }}"
-#        groupname: dev_instances
-#  with_items: "{{ ec2.tagged_instances }}"
-
+  failed_when: ec2.tagged_instances | length <= 0
 
 - name: Retrieve all volumes for a queried instance
   ec2_vol:
@@ -61,22 +49,12 @@
   with_items: '{{ ec2.tagged_instances }}'
   register: ec2_vol
 
-- name: debug ec2_vol.results[0].volumes
-  debug: 
-        var: ec2_vol.results[0].volumes
-
-- name: Loop over ec2_vol.results[0].volumes
-  debug:
-        var: "{{ item }}"
-  with_items: "{{ ec2_vol.results[0].volumes }}"
-
-- name: Loop over ec2_vol.results[0].volumes.id
+- name: Get all volumes
   debug:
         msg: "{{ item.1.id }}"
   with_subelements:
         - "{{ ec2_vol.results }}"
         - volumes
-
 
 - name: Ensure all volumes are tagged
   ec2_tag:
@@ -95,7 +73,7 @@
     - "{{ ec2_vol.results }}"
     - volumes
 
-- Name: make sure to start given machines
+- Name: Ensure all given machines are started
   ec2:
         region: "{{ our_region }}"
         instance_tags:
@@ -109,7 +87,14 @@
           CreatorDepartment: "{{ tag_CreatorDepartment }}"
           Environment: "{{ tag_Environment }}"
         state: running
+        wait: yes
 
 - name: Wait for SSH to come up
-  wait_for: host={{ item.private_ip }} port=22 delay=60 timeout=240 state=started
+  wait_for: host={{ item.private_ip }} port=22 delay=5 timeout=240 state=started
   with_items: '{{ ec2.tagged_instances }}'
+
+- name: Add new instance to host group for processing in following roles
+  add_host:
+        hostname: "{{ item.private_ip }}"
+        groupname: dev_instances
+  with_items: "{{ ec2.tagged_instances }}"
