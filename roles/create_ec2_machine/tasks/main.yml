@@ -16,13 +16,12 @@
           volume_size: 10
           delete_on_termination: true
           volume_type: gp2
-          encrypted: true
         # For creation
         - device_name: /dev/sdb
           volume_size: 5
           delete_on_termination: true
           volume_type: gp2
-          encripted: true
+          encrypted: true
         instance_tags:
           Name: "{{ tag_name }}"
           Owner: "{{ ec2_owner }}"
@@ -33,6 +32,7 @@
           CreatorCompany: "{{ tag_CreatorCompany  }}"
           CreatorDepartment: "{{ tag_CreatorDepartment }}"
           Environment: "{{ tag_Environment }}"
+          Team: "{{ tag_Team }}"
         exact_count: "{{ number_of_machines }}"
         count_tag:
           Name: "{{ tag_name }}"
@@ -69,6 +69,7 @@
           Product: "{{ tag_product }}"
           ApplicationID: "AID066"
           Environment: "Development"
+          Team: "{{ tag_Team }}"
   with_subelements:
     - "{{ ec2_vol.results }}"
     - volumes
@@ -76,18 +77,10 @@
 - Name: Ensure all given machines are started
   ec2:
         region: "{{ our_region }}"
-        instance_tags:
-          Name: "{{ tag_name }}"
-          Owner: "{{ ec2_owner }}"
-          Creator: "{{ ec2_owner }}"
-          CostCenter: "{{ tag_costcenter }}"
-          Product: "{{ tag_product }}"
-          ApplicationID: "{{ tag_ApplicationID }}"
-          CreatorCompany: "{{ tag_CreatorCompany  }}"
-          CreatorDepartment: "{{ tag_CreatorDepartment }}"
-          Environment: "{{ tag_Environment }}"
+        instance_ids: "{{ item.id }}"
         state: running
         wait: yes
+  with_items: "{{ ec2.tagged_instances }}"
 
 - name: Wait for SSH to come up
   wait_for: host={{ item.private_ip }} port=22 delay=5 timeout=240 state=started
