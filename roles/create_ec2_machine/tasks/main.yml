@@ -1,4 +1,28 @@
 ---
+- name: Create Master jenkins role
+  iam_role:
+    name: DBG-DEV-RTS-CSE-MASTER-JENKINS
+    description: "Role for RTS/CSE Master jenkins with ability to create/start/stop/terminate instances"
+#    assume_role_policy_document: "{{ role_path }}/files/assume_role_DBG-DEV-RTS-CSE-MASTER-JENKINS.json"
+    assume_role_policy_document: "{{ lookup('file', 'assume_role_DBG-DEV-RTS-CSE-MASTER-JENKINS.json') }}"
+    state: present
+
+- name: Assign EC2 policy to DBG-DEV-RTS-CSE-MASTER-JENKINS
+  iam_policy:
+    iam_type: role
+    iam_name: "DBG-DEV-RTS-CSE-MASTER-JENKINS"
+    policy_name: "DBG-DEV-RTS-CSE-MANAGE-EC2"
+    policy_document: "{{ role_path }}/files/DBG-DEV-RTS-CSE-MANAGE-EC2.json"
+    state: present
+
+- name: Assign IAM policy to DBG-DEV-RTS-CSE-MASTER-JENKINS
+  iam_policy:
+    iam_type: role
+    iam_name: "DBG-DEV-RTS-CSE-MASTER-JENKINS"
+    policy_name: "DBG-DEV-RTS-CSE-IAM"
+    policy_document: "{{ role_path }}/files/DBG-DEV-RTS-CSE-IAM.json"
+    state: present
+
 - name: Launch EC2 instance
   ec2:
         key_name: "{{ ssh_keypair }}"
